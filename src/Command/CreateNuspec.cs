@@ -115,69 +115,68 @@ namespace DXLocalizationNugetGenerator.Command
 
                 var dlllibEntryList = zip.Entries.Where(w => w.FullName.StartsWith("lib/") && w.Name.EndsWith(".dll"));
 
-                /*
-                 * if NuGet package contains any libs
-                 */ 
-                if (dlllibEntryList.Count() > 0)
+                var nuspecFile = zip.Entries.FirstOrDefault(f => f.Name.EndsWith(".nuspec"));
+
+                if (nuspecFile == null)
                 {
-                    var nuspecFile = zip.Entries.FirstOrDefault(f => f.Name.EndsWith(".nuspec"));
-                    
-                    if (nuspecFile == null)
-                    {
-                        /*
-                         * nuspec not found in nupkg; skip
-                         */ 
-
-                        continue; 
-                    }
-
                     /*
-                     * Prepare new nuspec filename and path.
-                     */ 
-                    string nuspecFileLocalizedName = ReplaceLanguage(nuspecFile.Name, languageCode);
-                    string nuspecFileLocalizedPath = Path.Combine(OutputNuspecPath, nuspecFileLocalizedName);
-                    
-                    /*
-                     * Extract nuspec.
-                     */ 
-                    nuspecFile.ExtractToFile(nuspecFileLocalizedPath, true);
+                     * nuspec not found in nupkg; skip
+                     */
 
-                    FilesRoot root = new FilesRoot();
-
-                    /*
-                     * Create files node.
-                     */ 
-                    foreach (var dlllibEntry in dlllibEntryList)
-                    {
-                        XmlFile xmlFile = new XmlFile()
-                        {
-                            Src = Path.Combine(Path.GetRelativePath(OutputNuspecPath, localizationLibrariesPath), dlllibEntry.Name),
-                            Target = dlllibEntry.FullName,
-                        };
-                        root.XmlFiles.Add(xmlFile);
-                    }
-
-                    /*
-                     * Convert data to xml.
-                     */  
-                    string filesElementToXml = string.Empty;
-
-                    using (var stringwriter = new System.IO.StringWriter())
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        using (XmlWriter writer = XmlWriter.Create(sb, new XmlWriterSettings() { OmitXmlDeclaration = true }))
-                        {
-                            new XmlSerializer(root.GetType()).Serialize(writer, root);
-                        }
-                        filesElementToXml = sb.ToString();
-                    }
-
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(nuspecFileLocalizedPath);
-                    doc["package"].InnerXml = doc["package"].InnerXml + filesElementToXml;
-                    doc.InnerXml = ReplaceLanguage(doc.InnerXml, LanguageCode);
-                    doc.Save(nuspecFileLocalizedPath);
+                    continue;
                 }
+
+                /*
+                 * Prepare new nuspec filename and path.
+                 */
+                string nuspecFileLocalizedName = ReplaceLanguage(nuspecFile.Name, languageCode);
+                string nuspecFileLocalizedPath = Path.Combine(OutputNuspecPath, nuspecFileLocalizedName);
+
+                /*
+                 * Extract nuspec.
+                 */
+                nuspecFile.ExtractToFile(nuspecFileLocalizedPath, true);
+
+                FilesRoot root = new FilesRoot();
+
+                /*
+                 * Create files node.
+                 */
+                foreach (var dlllibEntry in dlllibEntryList)
+                {
+                    XmlFile xmlFile = new XmlFile()
+                    {
+                        Src = Path.Combine(Path.GetRelativePath(OutputNuspecPath, localizationLibrariesPath), dlllibEntry.Name),
+                        Target = dlllibEntry.FullName,
+                    };
+                    root.XmlFiles.Add(xmlFile);
+                }
+
+                /*
+                 * Convert data to xml.
+                 */
+                string filesElementToXml = string.Empty;
+
+                using (var stringwriter = new System.IO.StringWriter())
+                {
+                    StringBuilder sb = new StringBuilder();
+                    using (XmlWriter writer = XmlWriter.Create(sb, new XmlWriterSettings() { OmitXmlDeclaration = true }))
+                    {
+                        new XmlSerializer(root.GetType()).Serialize(writer, root);
+                    }
+                    filesElementToXml = sb.ToString();
+                }
+
+                XmlDocument doc = new XmlDocument();
+                doc.Load(nuspecFileLocalizedPath);
+                
+                if (dlllibEntryList.Any())
+                {
+                    doc["package"].InnerXml = doc["package"].InnerXml + filesElementToXml;
+                }
+                
+                doc.InnerXml = ReplaceLanguage(doc.InnerXml, LanguageCode);
+                doc.Save(nuspecFileLocalizedPath);
             }
         }
 
