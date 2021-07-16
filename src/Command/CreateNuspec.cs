@@ -176,8 +176,17 @@ namespace DXLocalizationNugetGenerator.Command
                 }
                 
                 doc.InnerXml = ReplaceLanguage(doc.InnerXml, LanguageCode);
+                doc.InnerXml = FixNet50(doc.InnerXml);
                 doc.Save(nuspecFileLocalizedPath);
             }
+        }
+
+        private string FixNet50(string text)
+        {
+            text = text.Replace("/net5.0-windows/", "/net5.0-windows7.0/");
+            text = text.Replace("\"net5.0-windows\"", "\"net5.0-windows7.0\"");
+
+            return text;
         }
 
         string ReplaceLanguage(string text, string language)
