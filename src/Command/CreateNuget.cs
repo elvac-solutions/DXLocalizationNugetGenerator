@@ -91,7 +91,7 @@ namespace DXLocalizationNugetGenerator.Command
 
             var nugetExecutableExistsOnPath = ExistsOnPath("nuget.exe", out alternatePath);
 
-            if (nugetExecutableExistsOnPath)
+            if (!nugetExecutableExistsOnPath)
             {
                 alternatePath = Path.Combine(OutputDirectory, "nuget.exe");
 
