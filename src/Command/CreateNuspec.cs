@@ -1,11 +1,12 @@
-﻿using DXLocalizationNugetGenerator.Abstractions;
-using System;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
+
+using DXLocalizationNugetGenerator.Abstractions;
+
 using static DXLocalizationNugetGenerator.Model.Data;
 
 namespace DXLocalizationNugetGenerator.Command
@@ -70,8 +71,8 @@ namespace DXLocalizationNugetGenerator.Command
 
             var packages = FindNugetPackages(NugetPackagesPath);
 
-            if (packages.Count() == 0) 
-            { 
+            if (packages.Count() == 0)
+            {
                 ConsoleWrite("There are no nuget packages.");
                 return 0;
             }
@@ -144,9 +145,15 @@ namespace DXLocalizationNugetGenerator.Command
                  */
                 foreach (var dlllibEntry in dlllibEntryList)
                 {
+                    string subFolder;
+                    if (dlllibEntry.FullName.StartsWith("lib/net4"))
+                        subFolder = "Framework";
+                    else
+                        subFolder = "NetCore";
+
                     XmlFile xmlFile = new XmlFile()
                     {
-                        Src = Path.Combine(Path.GetRelativePath(OutputNuspecPath, localizationLibrariesPath), dlllibEntry.Name),
+                        Src = Path.Combine(Path.GetRelativePath(OutputNuspecPath, localizationLibrariesPath), subFolder, dlllibEntry.Name),
                         Target = dlllibEntry.FullName,
                     };
                     root.XmlFiles.Add(xmlFile);
@@ -169,12 +176,12 @@ namespace DXLocalizationNugetGenerator.Command
 
                 XmlDocument doc = new XmlDocument();
                 doc.Load(nuspecFileLocalizedPath);
-                
+
                 if (dlllibEntryList.Any())
                 {
                     doc["package"].InnerXml = doc["package"].InnerXml + filesElementToXml;
                 }
-                
+
                 doc.InnerXml = ReplaceLanguage(doc.InnerXml, LanguageCode);
                 doc.InnerXml = FixNet50(doc.InnerXml);
                 doc.Save(nuspecFileLocalizedPath);
